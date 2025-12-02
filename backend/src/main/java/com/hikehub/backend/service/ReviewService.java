@@ -1,7 +1,9 @@
 package com.hikehub.backend.service;
 
 import com.hikehub.backend.dto.CreateOrUpdateReviewRequest;
+import com.hikehub.backend.dto.CreateOrUpdateRatingRequest;
 import com.hikehub.backend.dto.HikeReviewsResponseDto;
+import com.hikehub.backend.dto.RatingDto;
 import com.hikehub.backend.dto.ReviewResponseDto;
 import com.hikehub.backend.model.Hike;
 import com.hikehub.backend.model.Review;
@@ -14,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -141,6 +145,107 @@ public class ReviewService {
                 currentUserUpvoted,
                 review.getCreatedAt(),
                 review.getUpdatedAt()
+        );
+    }
+    
+    // New methods for Rating API
+    
+    @Transactional(readOnly = true)
+    public List<RatingDto> getRatingsForHike(Long hikeId) {
+        // Load the hike
+        Hike hike = hikeRepository.findById(hikeId)
+                .orElseThrow(() -> new RuntimeException("Hike not found with id: " + hikeId));
+        
+        // Fetch all reviews sorted by upvotes_count desc, then created_at desc
+        List<Review> reviews = reviewRepository.findByHikeOrderByUpvotesCountDescCreatedAtDesc(hike);
+        
+        // Convert reviews to RatingDtos
+        return reviews.stream()
+                .map(this::toRatingDto)
+                .collect(Collectors.toList());
+    }
+    
+    public RatingDto createOrUpdateRating(Long hikeId, CreateOrUpdateRatingRequest request, User currentUser) {
+        // Load the hike
+        Hike hike = hikeRepository.findById(hikeId)
+                .orElseThrow(() -> new RuntimeException("Hike not found with id: " + hikeId));
+        
+        // Find existing review by same user for this hike
+        Optional<Review> existingReviewOpt = reviewRepository.findByHikeAndUser(hike, currentUser);
+        
+        Review review;
+        if (existingReviewOpt.isPresent()) {
+            // Update existing review
+            review = existingReviewOpt.get();
+            review.setRating(request.getRating());
+            review.setReviewBody(request.getComment());
+            // updatedAt is handled by @PreUpdate
+        } else {
+            // Create new review
+            review = new Review();
+            review.setHike(hike);
+            review.setUser(currentUser);
+            review.setRating(request.getRating());
+            review.setReviewBody(request.getComment());
+            review.setUpvotesCount(0);
+        }
+        
+        review = reviewRepository.save(review);
+        
+        // Convert to RatingDto
+        return toRatingDto(review);
+    }
+    
+    public RatingDto setUpvote(Long reviewId, Boolean upvoted, User currentUser) {
+        // Load the review
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
+        
+        // Check if upvote exists
+        Optional<ReviewUpvote> existingUpvoteOpt = reviewUpvoteRepository.findByReviewAndUser(review, currentUser);
+        
+        boolean currentlyUpvoted = existingUpvoteOpt.isPresent();
+        
+        if (upvoted && !currentlyUpvoted) {
+            // Add upvote
+            ReviewUpvote upvote = new ReviewUpvote(review, currentUser);
+            reviewUpvoteRepository.save(upvote);
+            review.setUpvotesCount(review.getUpvotesCount() + 1);
+            review = reviewRepository.save(review);
+        } else if (!upvoted && currentlyUpvoted) {
+            // Remove upvote
+            reviewUpvoteRepository.delete(existingUpvoteOpt.get());
+            review.setUpvotesCount(Math.max(0, review.getUpvotesCount() - 1));
+            review = reviewRepository.save(review);
+        }
+        // If upvoted == currentlyUpvoted, no change needed
+        
+        // Return updated DTO
+        return toRatingDto(review);
+    }
+    
+    private RatingDto toRatingDto(Review review) {
+        // Get all upvoters for this review
+        List<ReviewUpvote> upvotes = reviewUpvoteRepository.findByReview(review);
+        List<String> upvotedBy = upvotes.stream()
+                .map(upvote -> String.valueOf(upvote.getUser().getUserId()))
+                .collect(Collectors.toList());
+        
+        // Convert createdAt to ISO string
+        String createdAtStr = review.getCreatedAt() != null 
+                ? review.getCreatedAt().toString() 
+                : Instant.now().toString();
+        
+        return new RatingDto(
+                String.valueOf(review.getReviewId()),
+                String.valueOf(review.getHike().getHikeId()),
+                String.valueOf(review.getUser().getUserId()),
+                review.getRating(),
+                review.getReviewBody(),
+                review.getUpvotesCount(),
+                upvotedBy,
+                new ArrayList<>(), // images - empty for now
+                createdAtStr
         );
     }
 }

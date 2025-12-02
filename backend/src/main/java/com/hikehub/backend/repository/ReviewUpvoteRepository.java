@@ -6,11 +6,13 @@ import com.hikehub.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ReviewUpvoteRepository extends JpaRepository<ReviewUpvote, Long> {
     Optional<ReviewUpvote> findByReviewAndUser(Review review, User user);
     long countByReview(Review review);
+    List<ReviewUpvote> findByReview(Review review);
 }
 
