@@ -18,10 +18,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     Optional<Review> findByHikeAndUser(Hike hike, User user);
     
+    List<Review> findByUserOrderByCreatedAtDesc(User user);
+    
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.hike = :hike")
     Double findAverageRatingByHike(@Param("hike") Hike hike);
     
     @Query("SELECT COUNT(r) FROM Review r WHERE r.hike = :hike")
     Long countByHike(@Param("hike") Hike hike);
 }
-
