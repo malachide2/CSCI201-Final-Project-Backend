@@ -1,0 +1,30 @@
+# Eclipse
+.settings/
+.buildpath
+.classpath
+bin/
+target/
+*.log
+
+# Eclipse-specific project files that are safe to ignore
+.project
+
+# Maven/Gradle
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+tmp/
