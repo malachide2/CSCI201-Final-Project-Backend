@@ -38,6 +38,19 @@ CREATE TABLE reviews (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- REVIEW_UPVOTES TABLE
+CREATE TABLE review_upvotes (
+    review_upvote_id SERIAL PRIMARY KEY,
+    review_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(review_id, user_id),
+    
+    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
 -- PHOTOS TABLE
 CREATE TABLE photos (
     photo_id SERIAL PRIMARY KEY,
