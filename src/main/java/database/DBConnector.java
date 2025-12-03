@@ -2,9 +2,9 @@ package database;
 import java.sql.*;
 
 public class DBConnector {
-    private static final String URL = "jdbc:mysql://localhost:3306/StudentGradesDB";
+    private static final String URL = "jdbc:mysql://localhost:3306/YOUR_DATABASE_NAME";
     private static final String USER = "root";
-    private static final String PASSWORD = "CSCI201!";
+    private static final String PASSWORD = "YOUR_PASSWORD_HERE";
     
     private static DBConnector instance;
     private Connection conn;
@@ -45,6 +45,16 @@ public class DBConnector {
             }
         }
         return instance;
+    }
+    
+    // -----------------------------
+    // Get database connection
+    // -----------------------------
+    public Connection getConnection() throws SQLException {
+        if (conn == null || conn.isClosed()) {
+            conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        }
+        return conn;
     }
     
     // -----------------------------
