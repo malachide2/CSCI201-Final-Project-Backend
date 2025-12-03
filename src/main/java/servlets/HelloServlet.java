@@ -1,14 +1,19 @@
 package servlets;
+import database.DBConnector;
 
 import java.io.IOException;
-import jakarta.servlet.ServletException;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;
 
 @WebServlet("/hello")
 public class HelloServlet extends HttpServlet {
+  private final DBConnector connector = DBConnector.getInstance();
+  private final Gson gson = new Gson();
+  
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
