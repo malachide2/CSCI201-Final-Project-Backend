@@ -15,3 +15,5 @@ Seems to work as expected afterwards so I just needed a way to test it.
 
 Prompt:
 Make a dummy file where I can test the functionality of the endpoints
+Issues:
+Thumbnail logic added arbitrary bloat so I removed that
