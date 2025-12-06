@@ -19,6 +19,9 @@ public class LoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Set CORS headers
+        setCorsHeaders(response);
+        
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         
@@ -51,7 +54,7 @@ public class LoginServlet extends HttpServlet {
             if (storedHash != null && BCrypt.checkpw(rawPassword, storedHash)) {
                 String token = JwtUtil.generateToken(email, userId);
                 String cookieHeader = String.format(
-                    "accessToken=%s; Max-Age=%d; Path=/; HttpOnly; Secure; SameSite=Strict",
+                    "accessToken=%s; Max-Age=%d; Path=/; HttpOnly; SameSite=Lax",
                     token, 24 * 60 * 60 // 1 day in seconds
                 );
                 response.addHeader("Set-Cookie", cookieHeader);
@@ -75,5 +78,18 @@ public class LoginServlet extends HttpServlet {
             err.addProperty("message", "Server Error");
             out.print(gson.toJson(err));
         }
+    }
+    
+    private void setCorsHeaders(HttpServletResponse resp) {
+        resp.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+        resp.setHeader("Access-Control-Allow-Credentials", "true");
+        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        resp.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    }
+    
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        setCorsHeaders(resp);
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
 }

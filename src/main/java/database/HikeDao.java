@@ -37,9 +37,10 @@ public class HikeDao {
             Integer elevation,
             Integer createdBy,
             Double latitude,
-            Double longitude
+            Double longitude,
+            String description
     ) throws SQLException {
-        String sql = "INSERT INTO hikes (name, location_text, difficulty, distance, elevation, created_by, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO hikes (name, location_text, difficulty, distance, elevation, created_by, latitude, longitude, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         Connection conn = DBConnector.getInstance().getConnection();
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, name);
@@ -50,6 +51,7 @@ public class HikeDao {
             if (createdBy != null) stmt.setInt(6, createdBy); else stmt.setNull(6, Types.INTEGER);
             if (latitude != null) stmt.setDouble(7, latitude); else stmt.setNull(7, Types.DOUBLE);
             if (longitude != null) stmt.setDouble(8, longitude); else stmt.setNull(8, Types.DOUBLE);
+            if (description != null && !description.isBlank()) stmt.setString(9, description); else stmt.setNull(9, Types.VARCHAR);
 
             int rows = stmt.executeUpdate();
             if (rows == 0) {

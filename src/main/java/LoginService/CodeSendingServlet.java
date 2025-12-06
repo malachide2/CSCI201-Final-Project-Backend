@@ -20,6 +20,9 @@ public class CodeSendingServlet extends HttpServlet {
     private static final long EXPIRATION_MINUTES = 15;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Add CORS headers
+        setCorsHeaders(response);
+        
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
@@ -83,5 +86,18 @@ public class CodeSendingServlet extends HttpServlet {
         }
         
         out.print(gson.toJson(result));
+    }
+    
+    private void setCorsHeaders(HttpServletResponse resp) {
+        resp.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+        resp.setHeader("Access-Control-Allow-Credentials", "true");
+        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        resp.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    }
+    
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        setCorsHeaders(resp);
+        resp.setStatus(HttpServletResponse.SC_OK);
     }
 }

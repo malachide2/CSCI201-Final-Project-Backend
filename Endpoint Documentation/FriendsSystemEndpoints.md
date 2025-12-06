@@ -3,9 +3,14 @@
 ### Purpose
 Get list of users the current user is following, with follower/following counts.
 
+### Authentication
+Required - user must be authenticated (valid JWT cookie). The current user ID is determined from the authentication token.
+
 ### Example Request
 ```javascript
-fetch('/api/friends')
+fetch('/api/friends', {
+  credentials: 'include' // Required for authentication cookie
+})
 ```
 
 ### Response JSON
@@ -25,6 +30,9 @@ fetch('/api/friends')
 }
 ```
 
+### Error Responses
+- **500 Internal Server Error**: Database errors or server-side issues
+
 ---------------------------------------------------------
 
 ## 2. POST /api/friends
@@ -32,7 +40,11 @@ fetch('/api/friends')
 ### Purpose
 Follow a user by their username.
 
+### Authentication
+Required - user must be authenticated (valid JWT cookie)
+
 ### Input
+**JSON Body:**
 ```json
 {
   "username": "string"
@@ -44,6 +56,7 @@ Follow a user by their username.
 await fetch("/api/friends", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
+  credentials: "include", // Required for authentication cookie
   body: JSON.stringify({ username: "alice" })
 })
 ```
@@ -63,9 +76,12 @@ await fetch("/api/friends", {
 ```
 
 ### Error Responses
-- 400: Missing username or trying to follow yourself
-- 404: User not found
-- 409: Already following this user
+- **400 Bad Request**: Missing required field `username` or username is empty
+- **400 Bad Request**: Trying to follow yourself
+- **401 Unauthorized**: User not authenticated
+- **404 Not Found**: User not found
+- **409 Conflict**: Already following this user
+- **500 Internal Server Error**: Database errors or server-side issues
 
 ---------------------------------------------------------
 
@@ -74,10 +90,18 @@ await fetch("/api/friends", {
 ### Purpose
 Unfollow a user.
 
+### Authentication
+Required - user must be authenticated (valid JWT cookie)
+
+### Input
+**Query Parameter:**
+- `friendUserId` (required, number): The user ID of the friend to unfollow
+
 ### Example Request
 ```javascript
 await fetch("/api/friends?friendUserId=2", {
-  method: "DELETE"
+  method: "DELETE",
+  credentials: "include" // Required for authentication cookie
 })
 ```
 
@@ -90,16 +114,28 @@ await fetch("/api/friends?friendUserId=2", {
 }
 ```
 
+### Error Responses
+- **400 Bad Request**: Missing required parameter `friendUserId` or invalid format
+- **400 Bad Request**: You are not following this user
+- **401 Unauthorized**: User not authenticated
+- **404 Not Found**: User not found
+- **500 Internal Server Error**: Database errors or server-side issues
+
 ---------------------------------------------------------
 
 ## 4. GET /api/friends/followers
 
 ### Purpose
-Get list of users following the current user.
+Get list of users following the current user (followers).
+
+### Authentication
+Required - user must be authenticated (valid JWT cookie)
 
 ### Example Request
 ```javascript
-fetch('/api/friends/followers')
+fetch('/api/friends/followers', {
+  credentials: 'include' // Required for authentication cookie
+})
 ```
 
 ### Response JSON
@@ -119,6 +155,9 @@ fetch('/api/friends/followers')
 }
 ```
 
+### Error Responses
+- **500 Internal Server Error**: Database errors or server-side issues
+
 ---------------------------------------------------------
 
 ## 5. GET /api/friends/activity?friendUserId=X
@@ -126,13 +165,19 @@ fetch('/api/friends/followers')
 ### Purpose
 Get a friend's recent activity (their reviews). Requires following the user.
 
+### Authentication
+Required - user must be authenticated (valid JWT cookie)
+
 ### Parameters
-- friendUserId (required): The friend's user ID
-- limit (optional): Max items to return (default 20, max 100)
+**Query Parameters:**
+- `friendUserId` (required, number): The friend's user ID
+- `limit` (optional, number): Max items to return (default 20, max 100)
 
 ### Example Request
 ```javascript
-fetch('/api/friends/activity?friendUserId=2&limit=10')
+fetch('/api/friends/activity?friendUserId=2&limit=10', {
+  credentials: 'include' // Required for authentication cookie
+})
 ```
 
 ### Response JSON
@@ -157,20 +202,31 @@ fetch('/api/friends/activity?friendUserId=2&limit=10')
 ```
 
 ### Error Responses
-- 400: Missing friendUserId
-- 403: Not following this user
-- 404: User not found
+- **400 Bad Request**: Missing required parameter `friendUserId` or invalid format
+- **401 Unauthorized**: User not authenticated
+- **403 Forbidden**: Not following this user (must follow to view activity)
+- **404 Not Found**: User not found
+- **500 Internal Server Error**: Database errors or server-side issues
 
 ---------------------------------------------------------
 
 ## 6. GET /api/friends/status?friendUserId=X
 
 ### Purpose
-Check if the current user is following another user.
+Check if the current user is following another user, and if that user follows back.
+
+### Authentication
+Required - user must be authenticated (valid JWT cookie)
+
+### Parameters
+**Query Parameter:**
+- `friendUserId` (required, number): The user ID to check status for
 
 ### Example Request
 ```javascript
-fetch('/api/friends/status?friendUserId=2')
+fetch('/api/friends/status?friendUserId=2', {
+  credentials: 'include' // Required for authentication cookie
+})
 ```
 
 ### Response JSON
@@ -183,6 +239,12 @@ fetch('/api/friends/status?friendUserId=2')
   "followsBack": false
 }
 ```
+
+### Error Responses
+- **400 Bad Request**: Missing required parameter `friendUserId` or invalid format
+- **401 Unauthorized**: User not authenticated
+- **404 Not Found**: User not found
+- **500 Internal Server Error**: Database errors or server-side issues
 
 ---------------------------------------------------------
 

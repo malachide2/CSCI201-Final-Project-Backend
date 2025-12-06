@@ -20,6 +20,7 @@ CREATE TABLE hikes (
     hike_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     location_text VARCHAR(255),
+    description TEXT,
     difficulty DECIMAL(2,1) CHECK (difficulty >= 1 AND difficulty <= 5),
     distance DECIMAL(4,1),
     elevation INT,

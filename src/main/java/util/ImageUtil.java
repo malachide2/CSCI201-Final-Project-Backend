@@ -33,6 +33,6 @@ public class ImageUtil {
     public static boolean isValidImageType(String filename) {
         if (filename == null) return false;
         String lower = filename.toLowerCase();
-        return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png");
+        return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp");
     }
 }

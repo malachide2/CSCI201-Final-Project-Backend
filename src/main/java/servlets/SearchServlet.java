@@ -26,6 +26,9 @@ public class SearchServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 		throws ServletException, IOException {
         
+		// Add CORS headers
+		setCorsHeaders(response);
+		
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		
@@ -81,22 +84,28 @@ public class SearchServlet extends HttpServlet {
 		Double maxLength = (maxLengthStr != null && !maxLengthStr.isEmpty()) ? Double.parseDouble(maxLengthStr) : null;
 		Double minRating = (minRatingStr != null && !minRatingStr.isEmpty()) ? Double.parseDouble(minRatingStr) : null;
 		
-        // Map difficulty string to DB decimal value
+        // Map difficulty string to exact DB values
+        // Match the difficulty mapping used in AddHikeServlet:
+        // Easy: 1, Moderate: 2.5, Hard: 4, Expert: 5
+        // Use exact values or very tight ranges to match these specific values
 		Double difficultyValue = null;
         
-        // NOTE: This mapping MUST be confirmed by your team, as it is based on assumption!
 		if (difficulty != null && !difficulty.equalsIgnoreCase("All")) {
-            // Using a simple 1.0 step for four levels (Easy 1.0, Moderate 2.0, Hard 3.0, Expert 4.0)
-			if (difficulty.equalsIgnoreCase("Easy")) difficultyValue = 1.0;
-			else if (difficulty.equalsIgnoreCase("Moderate")) difficultyValue = 2.0;
-			else if (difficulty.equalsIgnoreCase("Hard")) difficultyValue = 3.0;
-            else if (difficulty.equalsIgnoreCase("Expert")) difficultyValue = 4.0;
+			if (difficulty.equalsIgnoreCase("Easy")) {
+				difficultyValue = 1.0;
+			} else if (difficulty.equalsIgnoreCase("Moderate")) {
+				difficultyValue = 2.5;
+			} else if (difficulty.equalsIgnoreCase("Hard")) {
+				difficultyValue = 4.0;
+			} else if (difficulty.equalsIgnoreCase("Expert")) {
+				difficultyValue = 5.0;
+			}
 		}
 
 
         // --- 2. Build Dynamic SQL Query ---
 		StringBuilder sql = new StringBuilder();
-		sql.append("SELECT h.hike_id, h.name, h.location_text, h.distance, h.difficulty, ");
+		sql.append("SELECT h.hike_id, h.name, h.location_text, h.description, h.distance, h.difficulty, ");
 		sql.append("COALESCE(AVG(r.rating), 0.0) AS average_rating, ");
 		// Subquery to get one photo's URL for the thumbnail
 		sql.append("(SELECT p.image_url FROM photos p WHERE p.hike_id = h.hike_id ORDER BY p.created_at ASC LIMIT 1) AS thumbnail_url ");
@@ -110,11 +119,12 @@ public class SearchServlet extends HttpServlet {
 			params.add("%" + searchQuery + "%");
 		}
 
-        // Append Difficulty Filter
+        // Append Difficulty Filter (using exact value matching)
 		if (difficultyValue != null) {
-            // We use equality here, assuming the DB stores the exact mapped value (e.g., 2.0 for Moderate)
-			sql.append("AND h.difficulty = ? "); 
-			params.add(difficultyValue);
+			// Use a small range (±0.1) to account for any floating point precision issues
+			sql.append("AND h.difficulty >= ? AND h.difficulty <= ? "); 
+			params.add(difficultyValue - 0.1);
+			params.add(difficultyValue + 0.1);
 		}
 
         // Append Length Filters
@@ -128,7 +138,7 @@ public class SearchServlet extends HttpServlet {
 		}
 
         // Group By Clause (Required for AVG(r.rating) and thumbnail subquery)
-		sql.append("GROUP BY h.hike_id, h.name, h.location_text, h.distance, h.difficulty, h.elevation, h.created_at ");
+		sql.append("GROUP BY h.hike_id, h.name, h.location_text, h.description, h.distance, h.difficulty, h.elevation, h.created_at ");
 		
         // Append Minimum Rating Filter (HAVING clause)
 		if (minRating != null) {
@@ -174,5 +184,18 @@ public class SearchServlet extends HttpServlet {
 		}
 		
 		return foundHikes;
+	}
+	
+	private void setCorsHeaders(HttpServletResponse resp) {
+		resp.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+		resp.setHeader("Access-Control-Allow-Credentials", "true");
+		resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
+		resp.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+	}
+	
+	@Override
+	protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		setCorsHeaders(resp);
+		resp.setStatus(HttpServletResponse.SC_OK);
 	}
 }
