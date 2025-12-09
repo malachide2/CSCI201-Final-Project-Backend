@@ -107,6 +107,7 @@ public class SearchServlet extends HttpServlet {
 		StringBuilder sql = new StringBuilder();
 		sql.append("SELECT h.hike_id, h.name, h.location_text, h.description, h.distance, h.difficulty, ");
 		sql.append("COALESCE(AVG(r.rating), 0.0) AS average_rating, ");
+		sql.append("COALESCE(COUNT(r.review_id), 0) AS total_ratings, ");
 		// Subquery to get one photo's URL for the thumbnail
 		sql.append("(SELECT p.image_url FROM photos p WHERE p.hike_id = h.hike_id ORDER BY p.created_at ASC LIMIT 1) AS thumbnail_url ");
 		sql.append("FROM hikes h LEFT JOIN reviews r ON h.hike_id = r.hike_id ");
@@ -176,6 +177,7 @@ public class SearchServlet extends HttpServlet {
 						rs.getDouble("distance"),
 						rs.getDouble("difficulty"),
 						rs.getDouble("average_rating"),
+						rs.getInt("total_ratings"),
 						rs.getString("thumbnail_url")
 					);
 					foundHikes.add(hike); 
