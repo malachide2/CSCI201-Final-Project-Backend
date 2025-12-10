@@ -44,6 +44,12 @@ public class SearchServlet extends HttpServlet {
 			List<Hike> hikes = executeSearch(searchQuery, difficulty, minLengthStr,
 												maxLengthStr, minRatingStr);
 			
+			// Debug: Log first hike's created_by value
+			if (!hikes.isEmpty()) {
+				Hike firstHike = hikes.get(0);
+				System.out.println("SearchServlet: First hike created_by = " + firstHike.getCreated_by());
+			}
+			
 			// --- 2. JSON Response ---
 			String jsonResponse = gson.toJson(hikes);
 			response.getWriter().write(jsonResponse);
@@ -109,7 +115,8 @@ public class SearchServlet extends HttpServlet {
 		sql.append("COALESCE(AVG(r.rating), 0.0) AS average_rating, ");
 		sql.append("COALESCE(COUNT(r.review_id), 0) AS total_ratings, ");
 		// Subquery to get one photo's URL for the thumbnail
-		sql.append("(SELECT p.image_url FROM photos p WHERE p.hike_id = h.hike_id ORDER BY p.created_at ASC LIMIT 1) AS thumbnail_url ");
+		sql.append("(SELECT p.image_url FROM photos p WHERE p.hike_id = h.hike_id ORDER BY p.created_at ASC LIMIT 1) AS thumbnail_url, ");
+		sql.append("h.created_by ");
 		sql.append("FROM hikes h LEFT JOIN reviews r ON h.hike_id = r.hike_id ");
 		sql.append("WHERE 1=1 "); // Base condition for easy AND appending
 
@@ -139,7 +146,7 @@ public class SearchServlet extends HttpServlet {
 		}
 
         // Group By Clause (Required for AVG(r.rating) and thumbnail subquery)
-		sql.append("GROUP BY h.hike_id, h.name, h.location_text, h.description, h.distance, h.difficulty, h.elevation, h.created_at ");
+		sql.append("GROUP BY h.hike_id, h.name, h.location_text, h.description, h.distance, h.difficulty, h.elevation, h.created_at, h.created_by ");
 		
         // Append Minimum Rating Filter (HAVING clause)
 		if (minRating != null) {
@@ -169,7 +176,29 @@ public class SearchServlet extends HttpServlet {
 			
 			try (ResultSet rs = pstmt.executeQuery()) {
                 // --- 4. Map Results to Hike Objects ---
+				int hikeCount = 0;
 				while (rs.next()) {
+					hikeCount++;
+					Integer createdBy = null;
+					try {
+						int cb = rs.getInt("created_by");
+						if (!rs.wasNull()) {
+							createdBy = cb;
+							if (hikeCount <= 3) {
+								System.out.println("SearchServlet: Hike #" + hikeCount + " - created_by from DB = " + createdBy);
+							}
+						} else {
+							if (hikeCount <= 3) {
+								System.out.println("SearchServlet: Hike #" + hikeCount + " - created_by is NULL in DB");
+							}
+						}
+					} catch (Exception e) {
+						// created_by is null, leave it as null
+						if (hikeCount <= 3) {
+							System.out.println("SearchServlet: Hike #" + hikeCount + " - Error reading created_by: " + e.getMessage());
+						}
+					}
+					
 					Hike hike = new Hike(
 						rs.getInt("hike_id"),
 						rs.getString("name"),
@@ -178,10 +207,17 @@ public class SearchServlet extends HttpServlet {
 						rs.getDouble("difficulty"),
 						rs.getDouble("average_rating"),
 						rs.getInt("total_ratings"),
-						rs.getString("thumbnail_url")
+						rs.getString("thumbnail_url"),
+						createdBy
 					);
+					
+					if (hikeCount <= 3) {
+						System.out.println("SearchServlet: Hike object created - created_by = " + hike.getCreated_by());
+					}
+					
 					foundHikes.add(hike); 
 				}
+				System.out.println("SearchServlet: Total hikes found = " + hikeCount);
 			}
 		}
 		

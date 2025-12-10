@@ -1,5 +1,7 @@
 package database;
 
+import com.google.gson.annotations.SerializedName;
+
 public class Hike {
     private int hike_id;
     private String name;
@@ -9,10 +11,12 @@ public class Hike {
     private double average_rating;
     private int total_ratings;
     private String thumbnail_url;
+    @SerializedName("created_by")
+    private Integer created_by;
 
     // Constructor matching the ResultSet columns
     public Hike(int hike_id, String name, String location_text, double distance, 
-                double difficulty, double average_rating, int total_ratings, String thumbnail_url) {
+                double difficulty, double average_rating, int total_ratings, String thumbnail_url, Integer created_by) {
         this.hike_id = hike_id;
         this.name = name;
         this.location_text = location_text;
@@ -21,6 +25,7 @@ public class Hike {
         this.average_rating = average_rating;
         this.total_ratings = total_ratings;
         this.thumbnail_url = thumbnail_url;
+        this.created_by = created_by;
     }
     
     public int getHike_id() {
@@ -53,5 +58,9 @@ public class Hike {
 
     public String getThumbnail_url() {
         return thumbnail_url;
+    }
+
+    public Integer getCreated_by() {
+        return created_by;
     }
 }

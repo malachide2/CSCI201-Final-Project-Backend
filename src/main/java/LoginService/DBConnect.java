@@ -9,9 +9,9 @@ import java.sql.Timestamp;
 
 public class DBConnect {
 
-    private String url = "jdbc:mysql://localhost:3306/YOUR_DATABASE_NAME";
+    private String url = "jdbc:mysql://localhost:3306/ADD_YOUR_DATABASE_NAME_HERE";
     private String username = "root";
-    private String password = "YOUR_PASSWORD_HERE";
+    private String password = "ADD_YOUR_PASSWORD_HERE";
 
     public DBConnect() {
         try {
